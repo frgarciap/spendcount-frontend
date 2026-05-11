@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ng version *)",
+      "Bash(npm --version)",
+      "PowerShell(ng version 2>&1)",
+      "PowerShell(npm install -g @angular/cli 2>&1)",
+      "PowerShell($env:PATH = $env:PATH + \";$env:APPDATA\\\\npm\"; ng version 2>&1 | Select-Object -First 8)",
+      "PowerShell($env:PATH = $env:PATH + \";$env:APPDATA\\\\npm\"; ng version --skip-git 2>&1 | Select-Object -Last 10)",
+      "PowerShell($env:PATH = $env:PATH + \";$env:APPDATA\\\\npm\"; ng version 2>&1 | Select-String \"Angular CLI|Node\" | Select-Object -First 3)"
+    ]
+  }
+}
