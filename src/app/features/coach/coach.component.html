@@ -1,0 +1,168 @@
+<div class="p-4 md:p-6 max-w-2xl mx-auto">
+
+  <!-- Header -->
+  <div class="mb-6">
+    <h1 class="text-xl md:text-2xl font-bold text-[#1C2833]">Coach Financiero IA 🤖</h1>
+    <p class="text-sm text-gray-500 mt-0.5">Análisis personalizado de tus finanzas</p>
+  </div>
+
+  <!-- Active Goal Card -->
+  <div class="bg-[#1C2833] rounded-2xl p-5 mb-5 text-white shadow-lg">
+    <div class="flex items-start justify-between mb-4">
+      <div class="flex items-center gap-3">
+        <div class="text-3xl">{{ goal().icon }}</div>
+        <div>
+          <p class="text-xs text-white/50 uppercase tracking-wide font-medium">Meta activa</p>
+          <h2 class="text-lg font-bold text-white leading-tight">{{ goal().name }}</h2>
+          <p class="text-xs text-white/50 mt-0.5">{{ goal().category }}</p>
+        </div>
+      </div>
+      <div class="text-right">
+        <p class="text-2xl font-bold text-[#D4A017]">{{ progressPercent }}%</p>
+        <p class="text-xs text-white/40">completado</p>
+      </div>
+    </div>
+
+    <!-- Progress Bar -->
+    <div class="mb-4">
+      <div class="h-3 bg-white/10 rounded-full overflow-hidden">
+        <div class="h-full bg-[#D4A017] rounded-full transition-all duration-700"
+          [style.width.%]="progressPercent">
+        </div>
+      </div>
+    </div>
+
+    <!-- Goal Stats -->
+    <div class="grid grid-cols-3 gap-3">
+      <div class="bg-white/5 rounded-xl p-3 text-center">
+        <p class="text-xs text-white/40 mb-1">Acumulado</p>
+        <p class="text-sm font-bold text-[#28B463]">{{ formatCurrency(goal().currentAmount) }}</p>
+      </div>
+      <div class="bg-white/5 rounded-xl p-3 text-center">
+        <p class="text-xs text-white/40 mb-1">Meta total</p>
+        <p class="text-sm font-bold text-white">{{ formatCurrency(goal().targetAmount) }}</p>
+      </div>
+      <div class="bg-white/5 rounded-xl p-3 text-center">
+        <p class="text-xs text-white/40 mb-1">Días restantes</p>
+        <p class="text-sm font-bold"
+          [class.text-[#D4A017]]="daysLeft > 30"
+          [class.text-[#CB4335]]="daysLeft <= 30">
+          {{ daysLeft }}
+        </p>
+      </div>
+    </div>
+
+    @if (goal().description) {
+      <p class="text-xs text-white/40 mt-3 italic">"{{ goal().description }}"</p>
+    }
+  </div>
+
+  <!-- Financial Snapshot -->
+  <div class="grid grid-cols-2 gap-3 mb-5">
+    <div class="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
+      <p class="text-xs text-gray-500 mb-1.5">Ingresos totales</p>
+      <p class="font-bold text-[#28B463] text-base">{{ formatCurrency(totalIncome()) }}</p>
+    </div>
+    <div class="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
+      <p class="text-xs text-gray-500 mb-1.5">Egresos totales</p>
+      <p class="font-bold text-[#CB4335] text-base">{{ formatCurrency(totalExpenses()) }}</p>
+    </div>
+  </div>
+
+  <!-- AI Analysis Section -->
+  <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden mb-4">
+    <div class="px-5 py-4 border-b border-gray-100 flex items-center gap-2">
+      <div class="w-7 h-7 rounded-lg bg-[#2E4057] flex items-center justify-center">
+        <span class="text-sm">🤖</span>
+      </div>
+      <h3 class="font-semibold text-[#1C2833] text-sm">Análisis de tu Coach IA</h3>
+    </div>
+
+    <!-- Messages -->
+    @if (messages().length === 0 && !isLoading()) {
+      <div class="flex flex-col items-center justify-center py-12 px-6 text-center">
+        <div class="w-16 h-16 rounded-2xl bg-[#D4A017]/10 flex items-center justify-center text-3xl mb-4">💡</div>
+        <p class="text-gray-700 font-medium mb-1">Solicita tu análisis personalizado</p>
+        <p class="text-gray-400 text-sm">Tu coach analizará tus patrones de gasto, la meta activa y te dará recomendaciones concretas para mejorar tu salud financiera.</p>
+      </div>
+    }
+
+    @if (messages().length > 0) {
+      <div class="px-5 py-4 space-y-4 max-h-96 overflow-y-auto">
+        @for (msg of messages(); track msg.id) {
+          <div class="flex gap-3">
+            <div class="w-8 h-8 rounded-xl bg-[#2E4057] flex items-center justify-center flex-shrink-0 mt-0.5">
+              <span class="text-sm">🤖</span>
+            </div>
+            <div class="flex-1">
+              <div class="bg-[#F2F3F4] rounded-2xl rounded-tl-md px-4 py-3">
+                <p class="text-sm text-[#1C2833] leading-relaxed"
+                  [innerHTML]="renderMarkdown(msg.content)">
+                </p>
+              </div>
+              <p class="text-xs text-gray-400 mt-1 ml-1">{{ formatTime(msg.timestamp) }}</p>
+            </div>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- Loading State -->
+    @if (isLoading()) {
+      <div class="px-5 py-4">
+        <div class="flex gap-3">
+          <div class="w-8 h-8 rounded-xl bg-[#2E4057] flex items-center justify-center flex-shrink-0">
+            <span class="text-sm">🤖</span>
+          </div>
+          <div class="bg-[#F2F3F4] rounded-2xl rounded-tl-md px-4 py-3 flex items-center gap-2">
+            <div class="flex gap-1">
+              <div class="w-2 h-2 rounded-full bg-[#D4A017] animate-bounce" style="animation-delay: 0ms"></div>
+              <div class="w-2 h-2 rounded-full bg-[#D4A017] animate-bounce" style="animation-delay: 150ms"></div>
+              <div class="w-2 h-2 rounded-full bg-[#D4A017] animate-bounce" style="animation-delay: 300ms"></div>
+            </div>
+            <span class="text-xs text-gray-400">Analizando tus finanzas...</span>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- Request Button -->
+    <div class="px-5 py-4 border-t border-gray-100">
+      <button
+        (click)="requestAnalysis()"
+        [disabled]="isLoading()"
+        class="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-bold transition-colors disabled:opacity-60"
+        [class.bg-[#D4A017]]="!isLoading()"
+        [class.text-[#1C2833]]="!isLoading()"
+        [class.hover:bg-[#F0C040]]="!isLoading()"
+        [class.bg-gray-100]="isLoading()"
+        [class.text-gray-400]="isLoading()"
+      >
+        @if (isLoading()) {
+          <svg class="animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          Analizando...
+        } @else {
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+          </svg>
+          {{ messages().length > 0 ? 'Solicitar nuevo análisis' : 'Solicitar análisis financiero' }}
+        }
+      </button>
+    </div>
+  </div>
+
+  <!-- Tips Card -->
+  <div class="bg-[#D4A017]/10 border border-[#D4A017]/20 rounded-2xl p-4">
+    <div class="flex items-start gap-3">
+      <span class="text-xl mt-0.5">💡</span>
+      <div>
+        <p class="text-sm font-semibold text-[#1C2833] mb-1">Tip financiero del día</p>
+        <p class="text-sm text-gray-600">La regla 50/30/20: destina el 50% de tus ingresos a necesidades, 30% a deseos y 20% a ahorro e inversiones. Es un punto de partida sólido para cualquier presupuesto personal.</p>
+      </div>
+    </div>
+  </div>
+
+</div>

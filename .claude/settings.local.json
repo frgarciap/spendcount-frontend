@@ -7,7 +7,22 @@
       "PowerShell(npm install -g @angular/cli 2>&1)",
       "PowerShell($env:PATH = $env:PATH + \";$env:APPDATA\\\\npm\"; ng version 2>&1 | Select-Object -First 8)",
       "PowerShell($env:PATH = $env:PATH + \";$env:APPDATA\\\\npm\"; ng version --skip-git 2>&1 | Select-Object -Last 10)",
-      "PowerShell($env:PATH = $env:PATH + \";$env:APPDATA\\\\npm\"; ng version 2>&1 | Select-String \"Angular CLI|Node\" | Select-Object -First 3)"
+      "PowerShell($env:PATH = $env:PATH + \";$env:APPDATA\\\\npm\"; ng version 2>&1 | Select-String \"Angular CLI|Node\" | Select-Object -First 3)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(d.get\\('version'\\), d.get\\('peerDependencies',{}\\)\\)\")",
+      "Bash(cd \"c:\\\\Users\\\\andre\\\\OneDrive\\\\Documentos\\\\Especialización\\\\Ingeniería de software\\\\Carpetas Clonadas\\\\SpendApp\" && rmdir /s /q .angular 2>nul && echo \"Cache limpiado\")",
+      "Bash(npx postcss *)",
+      "Bash(node_modules/.bin/postcss src/styles.css -o test-output.css)",
+      "PowerShell(cd \"c:\\\\Users\\\\andre\\\\OneDrive\\\\Documentos\\\\Especialización\\\\Ingeniería de software\\\\Carpetas Clonadas\\\\SpendApp\"; node_modules\\\\.bin\\\\postcss src\\\\styles.css -o test-output.css 2>&1; if \\(Test-Path test-output.css\\) { $content = Get-Content test-output.css -Raw; Write-Output \"OUTPUT LENGTH: $\\($content.Length\\)\"; Write-Output \\($content.Substring\\(0, [Math]::Min\\(500, $content.Length\\)\\)\\) })",
+      "PowerShell(Set-Location \"c:\\\\Users\\\\andre\\\\OneDrive\\\\Documentos\\\\Especialización\\\\Ingeniería de software\\\\Carpetas Clonadas\\\\SpendApp\"; & \".\\\\node_modules\\\\.bin\\\\postcss.cmd\" src\\\\styles.css -o test-output.css 2>&1; if \\(Test-Path test-output.css\\) { $content = Get-Content test-output.css -Raw; Write-Output \"OUTPUT LENGTH: $\\($content.Length\\)\"; Write-Output $content.Substring\\(0, [Math]::Min\\(800, $content.Length\\)\\) })",
+      "Bash(ls \"C:\\\\Users\\\\andre\\\\OneDrive\\\\Documentos\\\\Especialización\\\\Ingeniería de software\\\\Carpetas Clonadas\\\\SpendApp-Backend\\\\spend-count-backend\")",
+      "Read(//c/Users/andre/OneDrive/Documentos/Especialización/Ingeniería de software/Carpetas Clonadas/SpendApp-Backend/spend-count-backend/**)",
+      "Bash(Select-Object FullName)",
+      "PowerShell(Get-ChildItem \"C:\\\\Users\\\\andre\\\\OneDrive\\\\Documentos\\\\Especialización\\\\Ingeniería de software\\\\Carpetas Clonadas\\\\SpendApp-Backend\\\\spend-count-backend\\\\src\" -Recurse -File | ForEach-Object { $_.FullName })",
+      "PowerShell(netstat -ano)",
+      "PowerShell(Get-ChildItem \"C:\\\\Users\\\\andre\\\\OneDrive\\\\Documentos\\\\Especialización\\\\Ingeniería de software\\\\Carpetas Clonadas\\\\SpendApp\\\\src\\\\app\\\\shared\" -Recurse -File | ForEach-Object { $_.FullName })"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\andre\\OneDrive\\Documentos\\Especialización\\Ingeniería de software\\Carpetas Clonadas\\SpendApp"
     ]
   }
 }
