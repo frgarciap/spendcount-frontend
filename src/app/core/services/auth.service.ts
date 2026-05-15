@@ -4,7 +4,9 @@ import { switchMap, tap, map } from 'rxjs/operators';
 import { lastValueFrom } from 'rxjs';
 import { User, LoginCredentials, RegisterForm, ApiResponse, LoginResponse } from '../models/user.model';
 
-const API = '/api';
+import { environment } from '../../../environments/environment';
+
+const API = environment.apiUrl;
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
