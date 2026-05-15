@@ -3,7 +3,9 @@ import { HttpClient } from '@angular/common/http';
 import { ApiResponse } from '../models/user.model';
 import { Role } from '../models/role.model';
 
-const API = '/api';
+import { environment } from '../../../environments/environment';
+
+const API = environment.apiUrl;
 
 @Injectable({ providedIn: 'root' })
 export class RoleService {
