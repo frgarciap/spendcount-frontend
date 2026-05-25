@@ -1,95 +1,130 @@
-import { Injectable, signal } from '@angular/core';
-import { FinancialGoal, AiMessage } from '../models/goal.model';
-import { TransactionService } from './transaction.service';
-import { inject } from '@angular/core';
+import { Injectable, signal, computed, inject } from '@angular/core';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { lastValueFrom, throwError } from 'rxjs';
+import { catchError } from 'rxjs/operators';
+import { AiMessage, FinancialGoal } from '../models/goal.model';
+import { ApiResponse } from '../models/user.model';
+import { AuthService } from './auth.service';
+import { GoalService } from './goal.service';
+import { environment } from '../../../environments/environment';
 
-const MOCK_GOAL: FinancialGoal = {
-  id: '1',
-  name: 'Fondo de emergencia',
-  targetAmount: 10000000,
-  currentAmount: 4150000,
-  deadline: '2025-12-31',
-  icon: '🛡️',
-  category: 'Ahorro',
-  description: 'Tener 3 meses de gastos guardados como colchón financiero',
-};
+const API = environment.apiUrl;
 
-const AI_RESPONSES = [
-  `📊 **Análisis de tu situación financiera:**
-
-Tu tasa de ahorro actual es del **{savingsRate}%**, lo cual es {savingsRating}.
-
-**Puntos positivos:**
-- Mantienes ingresos estables por salario
-- Tu balance mensual es positivo
-
-**Oportunidades de mejora:**
-- Tus gastos en entretenimiento y compras representan el {entertainmentPct}% de tus egresos
-- Podrías automatizar transferencias al fondo de emergencia al inicio del mes
-
-**Meta actual:** A este ritmo alcanzarás tu fondo de emergencia en aproximadamente **{monthsLeft} meses** (objetivo: {deadline}).
-
-💡 *Consejo:* Considera destinar al menos el 20% de cada ingreso directamente al fondo de emergencia.`,
-
-  `🎯 **Revisión de tu meta financiera:**
-
-**Fondo de emergencia:** {currentAmount} / {targetAmount} ({progress}%)
-
-Con base en tus patrones de gasto, te recomiendo:
-
-1. **Reducir gastos variables** como entretenimiento y compras en un 15%
-2. **Incrementar ingresos alternativos** — ya tienes experiencia en freelance
-3. **Revisar suscripciones** que no uses activamente
-
-Al aplicar estos cambios podrías ahorrar adicional ~{potentialSavings} mensuales y alcanzar tu meta más rápido.`,
-];
+interface AiCoachRequestDto {
+  aiCoachRequestId: number;
+  userDocumentNumber: string;
+  financialGoalId: number;
+  question: string;
+  aiResponse: string;
+  model?: string;
+  createdAt?: string;
+}
 
 @Injectable({ providedIn: 'root' })
 export class CoachService {
-  private txService = inject(TransactionService);
+  private readonly http = inject(HttpClient);
+  private readonly auth = inject(AuthService);
+  private readonly goalService = inject(GoalService);
 
-  readonly goal = signal<FinancialGoal>(MOCK_GOAL);
-  readonly messages = signal<AiMessage[]>([]);
+  private readonly _allMessages = signal<AiMessage[]>([]);
+  readonly selectedGoal = signal<FinancialGoal | null>(null);
   readonly isLoading = signal(false);
+  readonly initializing = signal(false);
 
-  async requestAnalysis(): Promise<void> {
-    this.isLoading.set(true);
+  readonly filteredMessages = computed(() => {
+    const goal = this.selectedGoal();
+    if (!goal) return [];
+    return this._allMessages().filter(m => m.goalId === goal.id);
+  });
 
-    const income = this.txService.totalIncome();
-    const expenses = this.txService.totalExpenses();
-    const savingsRate = income > 0 ? Math.round(((income - expenses) / income) * 100) : 0;
-    const savingsRating = savingsRate >= 20 ? 'excelente' : savingsRate >= 10 ? 'bueno' : 'mejorable';
-    const goal = this.goal();
-    const progress = Math.round((goal.currentAmount / goal.targetAmount) * 100);
-    const potentialSavings = Math.round((expenses * 0.15) / 1000) * 1000;
-
-    const template = AI_RESPONSES[this.messages().length % AI_RESPONSES.length];
-    const content = template
-      .replace('{savingsRate}', savingsRate.toString())
-      .replace('{savingsRating}', savingsRating)
-      .replace('{entertainmentPct}', '18')
-      .replace('{monthsLeft}', '4')
-      .replace('{deadline}', goal.deadline)
-      .replace('{currentAmount}', this.formatCurrency(goal.currentAmount))
-      .replace('{targetAmount}', this.formatCurrency(goal.targetAmount))
-      .replace('{progress}', progress.toString())
-      .replace('{potentialSavings}', this.formatCurrency(potentialSavings));
-
-    await new Promise(r => setTimeout(r, 1800));
-
-    this.messages.update(msgs => [
-      ...msgs,
-      {
-        id: Date.now().toString(),
-        role: 'assistant',
-        content,
-        timestamp: new Date().toISOString(),
-      },
-    ]);
-    this.isLoading.set(false);
+  private get documentNumber(): string {
+    return this.auth.user()?.documentNumber ?? '';
   }
 
-  private formatCurrency(amount: number): string {
-    return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(amount);
+  private handleError(err: HttpErrorResponse) {
+    const msg = err.error?.message || 'Error inesperado, intenta de nuevo';
+    return throwError(() => new Error(msg));
+  }
+
+  selectGoal(goal: FinancialGoal): void {
+    this.selectedGoal.set(goal);
+  }
+
+  async init(): Promise<void> {
+    this.initializing.set(true);
+    try {
+      await Promise.all([this.goalService.loadAll(), this.loadHistory()]);
+    } finally {
+      this.initializing.set(false);
+    }
+  }
+
+  private async loadHistory(): Promise<void> {
+    const res = await lastValueFrom(
+      this.http.get<ApiResponse<AiCoachRequestDto[]>>(
+        `${API}/ai-coach/users/${this.documentNumber}/requests`
+      ).pipe(catchError((err: HttpErrorResponse) => this.handleError(err)))
+    );
+    const msgs: AiMessage[] = [];
+    for (const req of (res.data ?? []).sort((a, b) => (a.createdAt ?? '').localeCompare(b.createdAt ?? ''))) {
+      const goalId = String(req.financialGoalId);
+      if (req.question) {
+        msgs.push({
+          id: `q-${req.aiCoachRequestId}`,
+          role: 'user',
+          content: req.question,
+          timestamp: req.createdAt ?? new Date().toISOString(),
+          goalId,
+        });
+      }
+      if (req.aiResponse) {
+        msgs.push({
+          id: `a-${req.aiCoachRequestId}`,
+          role: 'assistant',
+          content: req.aiResponse,
+          timestamp: req.createdAt ?? new Date().toISOString(),
+          goalId,
+        });
+      }
+    }
+    this._allMessages.set(msgs);
+  }
+
+  async requestAdvice(question: string): Promise<void> {
+    const goal = this.selectedGoal();
+    if (!goal) return;
+
+    const tempId = Date.now().toString();
+    const goalId = goal.id;
+    this._allMessages.update(msgs => [
+      ...msgs,
+      { id: `q-${tempId}`, role: 'user', content: question, timestamp: new Date().toISOString(), goalId },
+      { id: `a-${tempId}`, role: 'assistant', content: '', timestamp: new Date().toISOString(), goalId, isLoading: true },
+    ]);
+    this.isLoading.set(true);
+
+    try {
+      const res = await lastValueFrom(
+        this.http.post<ApiResponse<AiCoachRequestDto>>(`${API}/ai-coach/advice`, {
+          userDocumentNumber: this.documentNumber,
+          financialGoalId: Number(goal.id),
+          question,
+        }).pipe(catchError((err: HttpErrorResponse) => this.handleError(err)))
+      );
+      this._allMessages.update(msgs =>
+        msgs.map(m =>
+          m.id === `a-${tempId}`
+            ? { ...m, content: res.data.aiResponse, isLoading: false }
+            : m
+        )
+      );
+    } catch (err) {
+      this._allMessages.update(msgs =>
+        msgs.filter(m => m.id !== `q-${tempId}` && m.id !== `a-${tempId}`)
+      );
+      throw err;
+    } finally {
+      this.isLoading.set(false);
+    }
   }
 }

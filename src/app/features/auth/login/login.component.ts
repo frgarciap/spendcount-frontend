@@ -40,6 +40,7 @@ export class LoginComponent {
   showRegisterConfirm = signal(false);
 
   readonly documentTypes = ['CC', 'TI', 'CE', 'PA', 'NIT'];
+  readonly today = new Date().toISOString().split('T')[0];
 
   async handleLogin(): Promise<void> {
     if (!this.documentNumber || !this.password) {
@@ -77,9 +78,25 @@ export class LoginComponent {
         this.registerError.set('Por favor completa todos los campos');
         return;
       }
+      if (!/^\d+$/.test(f.documentNumber)) {
+        this.registerError.set('El número de documento solo debe contener números');
+        return;
+      }
     } else if (this.registerStep() === 2) {
       if (!f.email || !f.celNumber || !f.birthDate) {
         this.registerError.set('Por favor completa todos los campos');
+        return;
+      }
+      if (!/^\d+$/.test(f.celNumber)) {
+        this.registerError.set('El número de celular solo debe contener números');
+        return;
+      }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email) || !f.email.toLowerCase().includes('.com')) {
+        this.registerError.set('El correo debe tener un formato válido (ejemplo: usuario@dominio.com)');
+        return;
+      }
+      if (f.birthDate > this.today) {
+        this.registerError.set('La fecha de nacimiento no puede ser posterior a hoy');
         return;
       }
     }

@@ -1,37 +1,55 @@
-import { Injectable, signal, computed } from '@angular/core';
+import { Injectable, signal, computed, inject } from '@angular/core';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { lastValueFrom, throwError } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import {
   Transaction, TransactionForm, TransactionFilter,
   TransactionCategory, CATEGORY_LABELS,
 } from '../models/transaction.model';
+import { ApiResponse } from '../models/user.model';
+import { AuthService } from './auth.service';
+import { environment } from '../../../environments/environment';
 
-const MOCK_TRANSACTIONS: Transaction[] = [
-  { id: '1', type: 'income', amount: 3500000, date: '2025-05-01', category: 'salary', description: 'Salario mensual', createdAt: new Date().toISOString() },
-  { id: '2', type: 'expense', amount: 850000, date: '2025-05-03', category: 'housing', description: 'Arriendo apartamento', createdAt: new Date().toISOString() },
-  { id: '3', type: 'expense', amount: 180000, date: '2025-05-05', category: 'food', description: 'Mercado semanal', createdAt: new Date().toISOString() },
-  { id: '4', type: 'expense', amount: 95000, date: '2025-05-07', category: 'transport', description: 'Transporte del mes', createdAt: new Date().toISOString() },
-  { id: '5', type: 'income', amount: 450000, date: '2025-05-10', category: 'freelance', description: 'Proyecto diseño web', createdAt: new Date().toISOString() },
-  { id: '6', type: 'expense', amount: 65000, date: '2025-05-12', category: 'health', description: 'Consulta médica', createdAt: new Date().toISOString() },
-  { id: '7', type: 'expense', amount: 120000, date: '2025-05-14', category: 'entertainment', description: 'Suscripciones streaming', createdAt: new Date().toISOString() },
-  { id: '8', type: 'expense', amount: 220000, date: '2025-05-16', category: 'shopping', description: 'Ropa y accesorios', createdAt: new Date().toISOString() },
-  { id: '9', type: 'income', amount: 200000, date: '2025-04-05', category: 'investment', description: 'Rendimiento CDT', createdAt: new Date().toISOString() },
-  { id: '10', type: 'expense', amount: 150000, date: '2025-04-10', category: 'education', description: 'Curso online', createdAt: new Date().toISOString() },
-  { id: '11', type: 'income', amount: 3500000, date: '2025-04-01', category: 'salary', description: 'Salario mensual', createdAt: new Date().toISOString() },
-  { id: '12', type: 'expense', amount: 850000, date: '2025-04-03', category: 'housing', description: 'Arriendo apartamento', createdAt: new Date().toISOString() },
-  { id: '13', type: 'expense', amount: 175000, date: '2025-04-06', category: 'food', description: 'Mercado', createdAt: new Date().toISOString() },
-  { id: '14', type: 'expense', amount: 95000, date: '2025-04-08', category: 'transport', description: 'Transporte', createdAt: new Date().toISOString() },
-  { id: '15', type: 'income', amount: 3500000, date: '2025-03-01', category: 'salary', description: 'Salario mensual', createdAt: new Date().toISOString() },
-  { id: '16', type: 'expense', amount: 850000, date: '2025-03-03', category: 'housing', description: 'Arriendo apartamento', createdAt: new Date().toISOString() },
-  { id: '17', type: 'expense', amount: 320000, date: '2025-03-15', category: 'health', description: 'Exámenes médicos', createdAt: new Date().toISOString() },
-  { id: '18', type: 'income', amount: 300000, date: '2025-03-20', category: 'gift', description: 'Regalo cumpleaños', createdAt: new Date().toISOString() },
-];
+const API = environment.apiUrl;
 
-const STORAGE_KEY = 'spendcount_transactions';
+interface FinancialRecordDto {
+  financialRecordId?: number;
+  userDocumentNumber?: string;
+  recordType?: string;
+  category?: string;
+  description?: string;
+  amount?: number;
+  recordDate?: string;
+  recurring?: boolean;
+  periodicity?: string;
+}
+
+function toTransaction(dto: FinancialRecordDto): Transaction {
+  const categoryKey = (Object.entries(CATEGORY_LABELS).find(
+    ([, label]) => label.toLowerCase() === (dto.category ?? '').toLowerCase()
+  )?.[0] as TransactionCategory) ?? 'other';
+
+  return {
+    id: String(dto.financialRecordId),
+    type: dto.recordType === 'INCOME' ? 'income' : 'expense',
+    amount: dto.amount ?? 0,
+    date: dto.recordDate ?? '',
+    category: categoryKey,
+    description: dto.description,
+    createdAt: dto.recordDate ?? '',
+  };
+}
 
 @Injectable({ providedIn: 'root' })
 export class TransactionService {
-  private readonly _transactions = signal<Transaction[]>(this.loadFromStorage());
+  private readonly http = inject(HttpClient);
+  private readonly auth = inject(AuthService);
+
+  private readonly _transactions = signal<Transaction[]>([]);
+  private readonly _loading = signal(false);
 
   readonly transactions = this._transactions.asReadonly();
+  readonly loading = this._loading.asReadonly();
 
   readonly totalIncome = computed(() =>
     this._transactions().filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0)
@@ -43,44 +61,73 @@ export class TransactionService {
 
   readonly balance = computed(() => this.totalIncome() - this.totalExpenses());
 
-  private loadFromStorage(): Transaction[] {
+  private get documentNumber(): string {
+    return this.auth.user()?.documentNumber ?? '';
+  }
+
+  private handleError(err: HttpErrorResponse) {
+    const msg = err.error?.message || 'Error inesperado, intenta de nuevo';
+    return throwError(() => new Error(msg));
+  }
+
+  async loadAll(): Promise<void> {
+    this._loading.set(true);
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      return stored ? JSON.parse(stored) : MOCK_TRANSACTIONS;
-    } catch {
-      return MOCK_TRANSACTIONS;
+      const res = await lastValueFrom(
+        this.http.get<ApiResponse<FinancialRecordDto[]>>(
+          `${API}/financial-records/users/${this.documentNumber}`
+        ).pipe(catchError((err: HttpErrorResponse) => this.handleError(err)))
+      );
+      this._transactions.set((res.data ?? []).map(toTransaction));
+    } finally {
+      this._loading.set(false);
     }
   }
 
-  private save(transactions: Transaction[]): void {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions));
-    this._transactions.set(transactions);
-  }
-
-  add(form: TransactionForm): void {
-    const transaction: Transaction = {
-      id: Date.now().toString(),
-      type: form.type,
-      amount: form.amount!,
-      date: form.date,
-      category: form.category as TransactionCategory,
+  async add(form: TransactionForm): Promise<void> {
+    const endpoint = form.type === 'income' ? 'incomes' : 'expenses';
+    const body: FinancialRecordDto = {
+      userDocumentNumber: this.documentNumber,
+      category: CATEGORY_LABELS[form.category as TransactionCategory] ?? form.category,
       description: form.description || undefined,
-      createdAt: new Date().toISOString(),
+      amount: form.amount!,
+      recordDate: form.date,
+      recurring: false,
     };
-    this.save([transaction, ...this._transactions()]);
-  }
-
-  update(id: string, form: TransactionForm): void {
-    const updated = this._transactions().map(t =>
-      t.id === id
-        ? { ...t, type: form.type, amount: form.amount!, date: form.date, category: form.category as TransactionCategory, description: form.description || undefined }
-        : t
+    const res = await lastValueFrom(
+      this.http.post<ApiResponse<FinancialRecordDto>>(
+        `${API}/financial-records/${endpoint}`, body
+      ).pipe(catchError((err: HttpErrorResponse) => this.handleError(err)))
     );
-    this.save(updated);
+    this._transactions.update(list => [toTransaction(res.data), ...list]);
   }
 
-  delete(id: string): void {
-    this.save(this._transactions().filter(t => t.id !== id));
+  async update(id: string, form: TransactionForm): Promise<void> {
+    const body: FinancialRecordDto = {
+      userDocumentNumber: this.documentNumber,
+      recordType: form.type === 'income' ? 'INCOME' : 'EXPENSE',
+      category: CATEGORY_LABELS[form.category as TransactionCategory] ?? form.category,
+      description: form.description || undefined,
+      amount: form.amount!,
+      recordDate: form.date,
+      recurring: false,
+    };
+    const res = await lastValueFrom(
+      this.http.put<ApiResponse<FinancialRecordDto>>(
+        `${API}/financial-records/${id}`, body
+      ).pipe(catchError((err: HttpErrorResponse) => this.handleError(err)))
+    );
+    this._transactions.update(list =>
+      list.map(t => t.id === id ? toTransaction(res.data) : t)
+    );
+  }
+
+  async delete(id: string): Promise<void> {
+    await lastValueFrom(
+      this.http.delete<ApiResponse<void>>(`${API}/financial-records/${id}`)
+        .pipe(catchError((err: HttpErrorResponse) => this.handleError(err)))
+    );
+    this._transactions.update(list => list.filter(t => t.id !== id));
   }
 
   filter(filters: TransactionFilter): Transaction[] {

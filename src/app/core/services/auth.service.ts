@@ -1,7 +1,7 @@
 import { Injectable, signal, computed, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { switchMap, tap, map } from 'rxjs/operators';
-import { lastValueFrom } from 'rxjs';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { switchMap, tap, map, catchError } from 'rxjs/operators';
+import { lastValueFrom, throwError } from 'rxjs';
 import { User, LoginCredentials, RegisterForm, ApiResponse, LoginResponse } from '../models/user.model';
 
 import { environment } from '../../../environments/environment';
@@ -25,6 +25,11 @@ export class AuthService {
     }
   }
 
+  private handleError(err: HttpErrorResponse) {
+    const msg = err.error?.message || 'Error inesperado, intenta de nuevo';
+    return throwError(() => new Error(msg));
+  }
+
   login(credentials: LoginCredentials): Promise<void> {
     const login$ = this.http
       .post<ApiResponse<LoginResponse>>(`${API}/users/login`, credentials)
@@ -38,6 +43,7 @@ export class AuthService {
           this._user.set(res.data);
         }),
         map(() => void 0 as void),
+        catchError((err: HttpErrorResponse) => this.handleError(err)),
       );
     return lastValueFrom(login$);
   }
@@ -63,6 +69,7 @@ export class AuthService {
           this._user.set(res.data);
         }),
         map(() => void 0 as void),
+        catchError((err: HttpErrorResponse) => this.handleError(err)),
       );
     return lastValueFrom(register$);
   }

@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed } from '@angular/core';
+import { Component, inject, signal, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DatePipe } from '@angular/common';
 import { TransactionService } from '../../core/services/transaction.service';
@@ -30,11 +30,12 @@ const EMPTY_FILTER: TransactionFilter = {
   imports: [FormsModule, DatePipe],
   templateUrl: './transactions.component.html',
 })
-export class TransactionsComponent {
+export class TransactionsComponent implements OnInit {
   private txService = inject(TransactionService);
   private authService = inject(AuthService);
 
   readonly user = this.authService.user;
+  readonly loading = this.txService.loading;
   readonly totalIncome = this.txService.totalIncome;
   readonly totalExpenses = this.txService.totalExpenses;
   readonly balance = this.txService.balance;
@@ -48,12 +49,20 @@ export class TransactionsComponent {
   filter: TransactionFilter = { ...EMPTY_FILTER };
   showFilters = signal(false);
 
-  filteredTransactions = computed(() => this.txService.filter(this.filter));
+  get filteredTransactions(): Transaction[] {
+    return this.txService.filter(this.filter);
+  }
 
   showForm = signal(false);
   editingId = signal<string | null>(null);
   form: TransactionForm = { ...EMPTY_FORM };
+  formLoading = signal(false);
+  formError = signal<string | null>(null);
   deleteConfirmId = signal<string | null>(null);
+
+  async ngOnInit(): Promise<void> {
+    await this.txService.loadAll();
+  }
 
   get availableCategories(): TransactionCategory[] {
     return this.form.type === 'income' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
@@ -74,17 +83,26 @@ export class TransactionsComponent {
   closeForm(): void {
     this.showForm.set(false);
     this.editingId.set(null);
+    this.formError.set(null);
   }
 
-  saveForm(): void {
+  async saveForm(): Promise<void> {
     if (!this.form.amount || !this.form.date || !this.form.category) return;
-    const id = this.editingId();
-    if (id) {
-      this.txService.update(id, this.form);
-    } else {
-      this.txService.add(this.form);
+    this.formLoading.set(true);
+    this.formError.set(null);
+    try {
+      const id = this.editingId();
+      if (id) {
+        await this.txService.update(id, this.form);
+      } else {
+        await this.txService.add(this.form);
+      }
+      this.closeForm();
+    } catch (err: unknown) {
+      this.formError.set(err instanceof Error ? err.message : 'Error al guardar el movimiento');
+    } finally {
+      this.formLoading.set(false);
     }
-    this.closeForm();
   }
 
   confirmDelete(id: string): void {
@@ -95,10 +113,10 @@ export class TransactionsComponent {
     this.deleteConfirmId.set(null);
   }
 
-  doDelete(): void {
+  async doDelete(): Promise<void> {
     const id = this.deleteConfirmId();
     if (id) {
-      this.txService.delete(id);
+      await this.txService.delete(id);
       this.deleteConfirmId.set(null);
     }
   }
