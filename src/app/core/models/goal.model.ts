@@ -3,16 +3,17 @@ export interface FinancialGoal {
   name: string;
   targetAmount: number;
   currentAmount: number;
+  startDate: string;
   deadline: string;
-  icon: string;
-  category: string;
+  status: string;
   description?: string;
 }
 
 export interface AiMessage {
   id: string;
-  role: 'assistant';
+  role: 'user' | 'assistant';
   content: string;
   timestamp: string;
+  goalId?: string;
   isLoading?: boolean;
 }

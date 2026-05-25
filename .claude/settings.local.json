@@ -19,7 +19,11 @@
       "Bash(Select-Object FullName)",
       "PowerShell(Get-ChildItem \"C:\\\\Users\\\\andre\\\\OneDrive\\\\Documentos\\\\Especialización\\\\Ingeniería de software\\\\Carpetas Clonadas\\\\SpendApp-Backend\\\\spend-count-backend\\\\src\" -Recurse -File | ForEach-Object { $_.FullName })",
       "PowerShell(netstat -ano)",
-      "PowerShell(Get-ChildItem \"C:\\\\Users\\\\andre\\\\OneDrive\\\\Documentos\\\\Especialización\\\\Ingeniería de software\\\\Carpetas Clonadas\\\\SpendApp\\\\src\\\\app\\\\shared\" -Recurse -File | ForEach-Object { $_.FullName })"
+      "PowerShell(Get-ChildItem \"C:\\\\Users\\\\andre\\\\OneDrive\\\\Documentos\\\\Especialización\\\\Ingeniería de software\\\\Carpetas Clonadas\\\\SpendApp\\\\src\\\\app\\\\shared\" -Recurse -File | ForEach-Object { $_.FullName })",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" \"https://backend-spendcount-bgchhcgcemezfzhp.chilecentral-01.azurewebsites.net/users\")",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\andre\\\\OneDrive\\\\Documentos\\\\Especialización\\\\Ingeniería de software\\\\Carpetas Clonadas\\\\SpendApp-Backend\\\\spend-count-backend\" -Recurse -File)",
+      "Bash(Select-Object -First 50)",
+      "Bash(Format-Table FullName)"
     ],
     "additionalDirectories": [
       "c:\\Users\\andre\\OneDrive\\Documentos\\Especialización\\Ingeniería de software\\Carpetas Clonadas\\SpendApp"
