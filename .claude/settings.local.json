@@ -25,7 +25,10 @@
       "Bash(Select-Object -First 50)",
       "Bash(Format-Table FullName)",
       "Bash(git -C \"c:\\\\Users\\\\andre\\\\OneDrive\\\\Documentos\\\\Especialización\\\\Ingeniería de software\\\\Carpetas Clonadas\\\\spendcount-frontend\" log --oneline origin/main..HEAD)",
-      "Bash(git -C \"c:\\\\Users\\\\andre\\\\OneDrive\\\\Documentos\\\\Especialización\\\\Ingeniería de software\\\\Carpetas Clonadas\\\\spendcount-frontend\" push origin main)"
+      "Bash(git -C \"c:\\\\Users\\\\andre\\\\OneDrive\\\\Documentos\\\\Especialización\\\\Ingeniería de software\\\\Carpetas Clonadas\\\\spendcount-frontend\" push origin main)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)"
     ],
     "additionalDirectories": [
       "c:\\Users\\andre\\OneDrive\\Documentos\\Especialización\\Ingeniería de software\\Carpetas Clonadas\\SpendApp"

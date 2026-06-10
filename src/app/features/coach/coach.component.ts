@@ -27,9 +27,6 @@ export class CoachComponent implements OnInit {
   readonly messages = this.coachService.filteredMessages;
   readonly isLoading = this.coachService.isLoading;
   readonly initializing = this.coachService.initializing;
-  readonly totalIncome = this.txService.totalIncome;
-  readonly totalExpenses = this.txService.totalExpenses;
-
   readonly suggestions = SUGGESTIONS;
 
   @ViewChild('messagesContainer') messagesContainer?: ElementRef<HTMLDivElement>;

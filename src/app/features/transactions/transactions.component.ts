@@ -190,6 +190,20 @@ export class TransactionsComponent implements OnInit {
     return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(amount);
   }
 
+  formatCurrencyShort(amount: number): string {
+    const sign = amount < 0 ? '-' : '';
+    const abs = Math.abs(amount);
+    if (abs >= 1_000_000) {
+      const val = (abs / 1_000_000).toFixed(1).replace(/\.0$/, '');
+      return `${sign}$ ${val}M`;
+    }
+    if (abs >= 1_000) {
+      const val = (abs / 1_000).toFixed(1).replace(/\.0$/, '');
+      return `${sign}$ ${val}K`;
+    }
+    return `${sign}$ ${abs.toLocaleString('es-CO')}`;
+  }
+
   getFirstName(): string {
     const name = this.user()?.name ?? '';
     return name.split(' ')[0];
