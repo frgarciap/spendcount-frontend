@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, ViewChild, ElementRef } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink, ActivatedRoute } from '@angular/router';
 import { CoachService } from '../../core/services/coach.service';
@@ -32,6 +32,9 @@ export class CoachComponent implements OnInit {
 
   readonly suggestions = SUGGESTIONS;
 
+  @ViewChild('messagesContainer') messagesContainer?: ElementRef<HTMLDivElement>;
+
+  chatOpen = false;
   question = '';
   sendError: string | null = null;
 
@@ -52,12 +55,31 @@ export class CoachComponent implements OnInit {
       ? allGoals.find(g => g.id === goalId)
       : allGoals.find(g => g.status === 'ACTIVE') ?? allGoals[0];
 
-    if (target) this.coachService.selectGoal(target);
+    if (target) {
+      this.coachService.selectGoal(target);
+      if (goalId) {
+        this.chatOpen = true;
+        this.scrollToBottom();
+      }
+    }
   }
 
   selectGoal(goal: FinancialGoal): void {
     this.coachService.selectGoal(goal);
     this.sendError = null;
+    this.chatOpen = true;
+    this.scrollToBottom();
+  }
+
+  closeChat(): void {
+    this.chatOpen = false;
+  }
+
+  private scrollToBottom(): void {
+    setTimeout(() => {
+      const el = this.messagesContainer?.nativeElement;
+      if (el) el.scrollTop = el.scrollHeight;
+    }, 50);
   }
 
   get progressPercent(): number {
@@ -76,6 +98,7 @@ export class CoachComponent implements OnInit {
 
   applySuggestion(q: string): void {
     this.question = q;
+    this.send();
   }
 
   async send(): Promise<void> {
@@ -83,10 +106,13 @@ export class CoachComponent implements OnInit {
     if (!q || this.isLoading()) return;
     this.question = '';
     this.sendError = null;
+    this.scrollToBottom();
     try {
       await this.coachService.requestAdvice(q);
     } catch (err) {
       this.sendError = err instanceof Error ? err.message : 'Error al obtener el análisis';
+    } finally {
+      this.scrollToBottom();
     }
   }
 

@@ -22,7 +22,6 @@
         <div class="bg-gray-200 rounded-2xl h-16"></div>
         <div class="bg-gray-200 rounded-2xl h-16"></div>
       </div>
-      <div class="bg-gray-200 rounded-2xl h-56"></div>
     </div>
   }
 
@@ -48,20 +47,13 @@
 
       <!-- Selector de metas -->
       <div class="mb-5">
-        <p class="text-xs font-medium text-gray-500 mb-2 uppercase tracking-wide">Selecciona una meta</p>
+        <p class="text-xs font-medium text-gray-500 mb-2 uppercase tracking-wide">Toca una meta para chatear</p>
         <div class="flex gap-2 overflow-x-auto pb-1">
           @for (goal of goals(); track goal.id) {
             <button
               type="button"
               (click)="selectGoal(goal)"
-              class="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium border transition-colors"
-              [class.bg-[#1C2833]]="selectedGoal()?.id === goal.id"
-              [class.text-[#D4A017]]="selectedGoal()?.id === goal.id"
-              [class.border-[#1C2833]]="selectedGoal()?.id === goal.id"
-              [class.bg-white]="selectedGoal()?.id !== goal.id"
-              [class.text-gray-600]="selectedGoal()?.id !== goal.id"
-              [class.border-gray-200]="selectedGoal()?.id !== goal.id"
-              [class.hover:border-gray-400]="selectedGoal()?.id !== goal.id">
+              class="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium border transition-colors bg-white text-gray-600 border-gray-200 hover:border-gray-400 active:scale-95">
               <span class="text-base leading-none">🎯</span>
               <span class="truncate max-w-36">{{ goal.name }}</span>
               @if (goal.status === 'ACTIVE') {
@@ -74,120 +66,8 @@
 
       @if (selectedGoal(); as goal) {
 
-        <!-- Chat -->
-        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden mb-4">
-          <div class="px-5 py-4 border-b border-gray-100 flex items-center gap-2">
-            <div class="w-7 h-7 rounded-lg bg-white flex items-center justify-center overflow-hidden">
-              <img src="https://i.ibb.co/60kjzFsJ/Gemini-Generated-Image-gzmgxugzmgxugzmg-removebg-preview.webp" alt="Coach IA" class="w-6 h-6 object-contain"/>
-            </div>
-            <h3 class="font-semibold text-[#1C2833] text-sm">Coach IA — {{ goal.name }}</h3>
-          </div>
-
-          <!-- Mensajes -->
-          @if (messages().length === 0) {
-            <div class="flex flex-col items-center justify-center py-12 px-6 text-center">
-              <div class="w-16 h-16 rounded-2xl bg-[#D4A017]/10 flex items-center justify-center text-3xl mb-4">💡</div>
-              <p class="text-gray-700 font-medium mb-1">Pregúntale a tu coach</p>
-              <p class="text-gray-400 text-sm">Usa las sugerencias o escribe tu propia pregunta sobre esta meta.</p>
-            </div>
-          } @else {
-            <div class="px-5 py-4 space-y-4 max-h-96 overflow-y-auto">
-              @for (msg of messages(); track msg.id) {
-
-                @if (msg.role === 'user') {
-                  <div class="flex justify-end">
-                    <div class="max-w-[80%]">
-                      <div class="bg-[#1C2833] rounded-2xl rounded-tr-md px-4 py-3">
-                        <p class="text-sm text-white leading-relaxed">{{ msg.content }}</p>
-                      </div>
-                      <p class="text-xs text-gray-400 mt-1 text-right mr-1">{{ formatTime(msg.timestamp) }}</p>
-                    </div>
-                  </div>
-                }
-
-                @if (msg.role === 'assistant') {
-                  <div class="flex gap-3">
-                    <div class="w-8 h-8 rounded-xl bg-white flex items-center justify-center flex-shrink-0 mt-0.5 overflow-hidden">
-                      <img src="https://i.ibb.co/60kjzFsJ/Gemini-Generated-Image-gzmgxugzmgxugzmg-removebg-preview.webp" alt="Coach IA" class="w-7 h-7 object-contain"/>
-                    </div>
-                    <div class="flex-1">
-                      @if (msg.isLoading) {
-                        <div class="bg-[#F2F3F4] rounded-2xl rounded-tl-md px-4 py-3 flex items-center gap-2">
-                          <div class="flex gap-1">
-                            <div class="w-2 h-2 rounded-full bg-[#D4A017] animate-bounce" style="animation-delay: 0ms"></div>
-                            <div class="w-2 h-2 rounded-full bg-[#D4A017] animate-bounce" style="animation-delay: 150ms"></div>
-                            <div class="w-2 h-2 rounded-full bg-[#D4A017] animate-bounce" style="animation-delay: 300ms"></div>
-                          </div>
-                          <span class="text-xs text-gray-400">Analizando...</span>
-                        </div>
-                      } @else {
-                        <div class="bg-[#F2F3F4] rounded-2xl rounded-tl-md px-4 py-3">
-                          <p class="text-sm text-[#1C2833] leading-relaxed"
-                            [innerHTML]="renderMarkdown(msg.content)">
-                          </p>
-                        </div>
-                        <p class="text-xs text-gray-400 mt-1 ml-1">{{ formatTime(msg.timestamp) }}</p>
-                      }
-                    </div>
-                  </div>
-                }
-
-              }
-            </div>
-          }
-
-          <!-- Error de envío -->
-          @if (sendError) {
-            <div class="mx-5 mb-3 bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2.5 rounded-lg">
-              {{ sendError }}
-            </div>
-          }
-
-          <!-- Input -->
-          <div class="px-5 py-4 border-t border-gray-100 space-y-3">
-            <div class="flex flex-wrap gap-2">
-              @for (s of suggestions; track s) {
-                <button
-                  type="button"
-                  (click)="applySuggestion(s)"
-                  [disabled]="isLoading()"
-                  class="text-xs px-3 py-1.5 rounded-full border border-[#D4A017]/40 text-[#D4A017] bg-[#D4A017]/5 hover:bg-[#D4A017]/10 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
-                  {{ s }}
-                </button>
-              }
-            </div>
-
-            <div class="flex gap-2">
-              <input
-                type="text"
-                [(ngModel)]="question"
-                (keydown.enter)="send()"
-                [disabled]="isLoading()"
-                placeholder="Escribe tu pregunta sobre esta meta..."
-                class="flex-1 text-sm border border-gray-200 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-[#D4A017] focus:border-[#D4A017] outline-none bg-gray-50 focus:bg-white transition-colors disabled:opacity-50"
-              />
-              <button
-                type="button"
-                (click)="send()"
-                [disabled]="!question.trim() || isLoading()"
-                class="w-11 h-11 rounded-xl bg-[#D4A017] text-[#1C2833] flex items-center justify-center hover:bg-[#F0C040] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0">
-                @if (isLoading()) {
-                  <svg class="animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                } @else {
-                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
-                  </svg>
-                }
-              </button>
-            </div>
-          </div>
-        </div>
-
         <!-- Card de meta seleccionada -->
-        <div class="bg-[#1C2833] rounded-2xl p-5 mb-5 text-white shadow-lg">
+        <div class="bg-[#1C2833] rounded-2xl p-5 mb-4 text-white shadow-lg">
           <div class="flex items-start justify-between mb-4">
             <div class="flex items-center gap-3">
               <div class="text-3xl">🎯</div>
@@ -213,7 +93,7 @@
             </div>
           </div>
 
-          <div class="grid grid-cols-3 gap-3">
+          <div class="grid grid-cols-3 gap-3 mb-4">
             <div class="bg-white/5 rounded-xl p-3 text-center">
               <p class="text-xs text-white/40 mb-1">Acumulado</p>
               <p class="text-sm font-bold text-[#28B463]">{{ formatCurrency(goal.currentAmount) }}</p>
@@ -231,6 +111,15 @@
               </p>
             </div>
           </div>
+
+          <!-- Botón abrir chat -->
+          <button type="button" (click)="selectGoal(goal)"
+            class="w-full flex items-center justify-center gap-2 bg-[#D4A017] text-[#1C2833] font-bold text-sm py-3 rounded-xl hover:bg-[#F0C040] active:scale-[0.98] transition-all">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+            </svg>
+            Chatear con el Coach
+          </button>
         </div>
 
         <!-- Resumen financiero -->
@@ -261,3 +150,134 @@
   }
 
 </div>
+
+<!-- ===== CHAT OVERLAY PANTALLA COMPLETA ===== -->
+@if (chatOpen && selectedGoal(); as goal) {
+  <div class="fixed inset-0 z-50 flex flex-col bg-[#F2F3F4]">
+
+    <!-- Header del chat -->
+    <div class="bg-[#1C2833] px-4 flex items-center gap-3 flex-shrink-0" style="padding-top: max(12px, env(safe-area-inset-top)); padding-bottom: 12px;">
+      <button type="button" (click)="closeChat()"
+        class="text-white p-2 rounded-xl hover:bg-white/10 active:bg-white/20 transition-colors flex-shrink-0">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+        </svg>
+      </button>
+      <div class="w-8 h-8 rounded-xl bg-white flex items-center justify-center flex-shrink-0 overflow-hidden">
+        <img src="https://i.ibb.co/60kjzFsJ/Gemini-Generated-Image-gzmgxugzmgxugzmg-removebg-preview.webp" alt="Coach IA" class="w-7 h-7 object-contain"/>
+      </div>
+      <div class="flex-1 min-w-0">
+        <p class="text-white font-semibold text-sm leading-tight truncate">{{ goal.name }}</p>
+        <p class="text-white/50 text-xs leading-tight">Coach Financiero IA</p>
+      </div>
+      <div class="bg-[#D4A017]/20 px-2.5 py-1 rounded-full flex-shrink-0">
+        <span class="text-[#D4A017] font-bold text-xs">{{ progressPercent }}%</span>
+      </div>
+    </div>
+
+    <!-- Mensajes -->
+    @if (messages().length === 0) {
+      <div class="flex-1 flex flex-col items-center justify-center px-6 text-center">
+        <div class="w-16 h-16 rounded-2xl bg-[#D4A017]/10 flex items-center justify-center text-3xl mb-4">💡</div>
+        <p class="text-gray-700 font-medium mb-1">Pregúntale a tu coach</p>
+        <p class="text-gray-400 text-sm">Usa las sugerencias o escribe tu propia pregunta sobre esta meta.</p>
+      </div>
+    } @else {
+      <div #messagesContainer class="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+        @for (msg of messages(); track msg.id) {
+
+          @if (msg.role === 'user') {
+            <div class="flex justify-end">
+              <div class="max-w-[80%] md:max-w-[60%]">
+                <div class="bg-[#1C2833] rounded-2xl rounded-tr-md px-4 py-3">
+                  <p class="text-sm text-white leading-relaxed">{{ msg.content }}</p>
+                </div>
+                <p class="text-xs text-gray-400 mt-1 text-right mr-1">{{ formatTime(msg.timestamp) }}</p>
+              </div>
+            </div>
+          }
+
+          @if (msg.role === 'assistant') {
+            <div class="flex gap-3">
+              <div class="w-8 h-8 rounded-xl bg-white flex items-center justify-center flex-shrink-0 mt-0.5 overflow-hidden shadow-sm">
+                <img src="https://i.ibb.co/60kjzFsJ/Gemini-Generated-Image-gzmgxugzmgxugzmg-removebg-preview.webp" alt="Coach IA" class="w-7 h-7 object-contain"/>
+              </div>
+              <div class="flex-1 max-w-[80%] md:max-w-[60%]">
+                @if (msg.isLoading) {
+                  <div class="bg-white rounded-2xl rounded-tl-md px-4 py-3 flex items-center gap-2 shadow-sm">
+                    <div class="flex gap-1">
+                      <div class="w-2 h-2 rounded-full bg-[#D4A017] animate-bounce" style="animation-delay: 0ms"></div>
+                      <div class="w-2 h-2 rounded-full bg-[#D4A017] animate-bounce" style="animation-delay: 150ms"></div>
+                      <div class="w-2 h-2 rounded-full bg-[#D4A017] animate-bounce" style="animation-delay: 300ms"></div>
+                    </div>
+                    <span class="text-xs text-gray-400">Analizando...</span>
+                  </div>
+                } @else {
+                  <div class="bg-white rounded-2xl rounded-tl-md px-4 py-3 shadow-sm">
+                    <p class="text-sm text-[#1C2833] leading-relaxed"
+                      [innerHTML]="renderMarkdown(msg.content)">
+                    </p>
+                  </div>
+                  <p class="text-xs text-gray-400 mt-1 ml-1">{{ formatTime(msg.timestamp) }}</p>
+                }
+              </div>
+            </div>
+          }
+
+        }
+      </div>
+    }
+
+    <!-- Error de envío -->
+    @if (sendError) {
+      <div class="mx-4 mb-2 bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2.5 rounded-lg flex-shrink-0">
+        {{ sendError }}
+      </div>
+    }
+
+    <!-- Input fijo al fondo -->
+    <div class="bg-white border-t border-gray-100 px-4 pt-3 flex-shrink-0" style="padding-bottom: max(16px, env(safe-area-inset-bottom));">
+      <div class="flex flex-wrap gap-2 mb-2">
+        @for (s of suggestions; track s) {
+          <button
+            type="button"
+            (click)="applySuggestion(s)"
+            [disabled]="isLoading()"
+            class="text-xs px-3 py-1.5 rounded-full border border-[#D4A017]/40 text-[#D4A017] bg-[#D4A017]/5 hover:bg-[#D4A017]/10 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+            {{ s }}
+          </button>
+        }
+      </div>
+
+      <div class="flex gap-2 pb-1">
+        <input
+          type="text"
+          [(ngModel)]="question"
+          (keydown.enter)="send()"
+          [disabled]="isLoading()"
+          placeholder="Escribe tu pregunta sobre esta meta..."
+          class="flex-1 text-sm border border-gray-200 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-[#D4A017] focus:border-[#D4A017] outline-none bg-gray-50 focus:bg-white transition-colors disabled:opacity-50"
+        />
+        <button
+          type="button"
+          (click)="send()"
+          [disabled]="!question.trim() || isLoading()"
+          class="w-11 h-11 rounded-xl bg-white border border-gray-200 shadow-sm flex items-center justify-center hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0">
+          @if (isLoading()) {
+            <svg class="animate-spin w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="#D4A017" stroke-width="4"></circle>
+              <path class="opacity-75" fill="#D4A017" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+          } @else {
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 234 234" class="w-6 h-6">
+              <g transform="translate(-97.974180,269.013890) scale(0.1,-0.1)" fill="#D4A017" stroke="none">
+                <path d="M1115 2671 c-49 -23 -99 -74 -119 -123 -32 -76 -23 -126 89 -491 108 -352 124 -395 153 -413 9 -6 115 -35 235 -65 119 -29 217 -56 217 -59 0 -3 -98 -30 -217 -59 -120 -30 -226 -59 -235 -65 -29 -18 -45 -61 -153 -413 -114 -372 -122 -420 -86 -498 58 -125 198 -169 334 -106 34 16 420 203 857 416 437 213 841 410 898 437 171 82 232 157 232 288 0 131 -61 206 -232 288 -57 27 -461 224 -898 437 -437 213 -823 400 -857 416 -76 35 -156 39 -218 10z m1037 -645 c1001 -487 981 -475 948 -532 -12 -21 -207 -120 -949 -481 -514 -250 -940 -452 -947 -449 -8 3 -14 12 -14 20 0 13 187 626 193 632 1 2 184 48 405 104 222 55 412 106 422 113 11 6 27 27 36 46 20 43 6 101 -30 125 -14 8 -206 61 -428 116 -221 56 -404 103 -406 104 -11 12 -193 629 -188 641 3 8 10 15 15 15 6 0 430 -204 943 -454z"/>
+              </g>
+            </svg>
+          }
+        </button>
+      </div>
+    </div>
+
+  </div>
+}

@@ -152,13 +152,13 @@
             <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-lg"
               [class.bg-[#28B463]/10]="tx.type === 'income'"
               [class.bg-[#CB4335]/10]="tx.type === 'expense'">
-              {{ CATEGORY_ICONS[tx.category] }}
+              {{ getCategoryIcon(tx.category) }}
             </div>
 
             <!-- Info -->
             <div class="flex-1 min-w-0">
               <p class="text-sm font-medium text-[#1C2833] truncate">
-                {{ tx.description || CATEGORY_LABELS[tx.category] }}
+                {{ tx.description || getCategoryLabel(tx.category) }}
               </p>
               <div class="flex items-center gap-1.5 mt-0.5">
                 <span class="text-xs text-gray-400">{{ tx.date | date:'dd/MM/yyyy' }}</span>
@@ -168,7 +168,7 @@
                   [class.text-[#28B463]]="tx.type === 'income'"
                   [class.bg-[#CB4335]/10]="tx.type === 'expense'"
                   [class.text-[#CB4335]]="tx.type === 'expense'">
-                  {{ CATEGORY_LABELS[tx.category] }}
+                  {{ getCategoryLabel(tx.category) }}
                 </span>
               </div>
             </div>
@@ -260,7 +260,7 @@
           <label class="block text-sm font-medium text-gray-700 mb-1.5">Monto</label>
           <div class="relative">
             <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400 text-sm font-medium">$</span>
-            <input type="number" [(ngModel)]="form.amount" min="0"
+            <input type="text" inputmode="numeric" [value]="amountDisplay" (input)="onAmountInput($event)"
               class="block w-full pl-7 pr-3 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#D4A017] focus:border-[#D4A017] bg-gray-50 focus:bg-white transition-colors outline-none"
               placeholder="0">
           </div>
@@ -273,16 +273,45 @@
             class="block w-full px-3 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#D4A017] focus:border-[#D4A017] bg-gray-50 focus:bg-white transition-colors outline-none">
         </div>
 
-        <!-- Category -->
+        <!-- Category Combobox -->
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1.5">Categoría</label>
-          <select [(ngModel)]="form.category"
-            class="block w-full px-3 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#D4A017] focus:border-[#D4A017] bg-gray-50 focus:bg-white transition-colors outline-none">
-            <option value="">Selecciona una categoría</option>
-            @for (cat of availableCategories; track cat) {
-              <option [value]="cat">{{ CATEGORY_ICONS[cat] }} {{ CATEGORY_LABELS[cat] }}</option>
+          <div class="relative">
+            <input type="text" autocomplete="off"
+              [(ngModel)]="categorySearch"
+              (focus)="showCategoryDropdown = true"
+              (input)="showCategoryDropdown = true"
+              (blur)="closeCategoryDropdown()"
+              placeholder="Buscar categoría..."
+              class="block w-full px-3 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#D4A017] focus:border-[#D4A017] bg-gray-50 focus:bg-white transition-colors outline-none">
+            @if (showCategoryDropdown) {
+              <div class="absolute z-20 w-full mt-1 bg-white rounded-lg border border-gray-200 shadow-lg max-h-56 overflow-y-auto">
+                @if (filteredStandardCategories.length > 0) {
+                  <div class="px-3 pt-2 pb-1 text-xs font-semibold text-gray-400 uppercase tracking-wide">Categorías</div>
+                  @for (opt of filteredStandardCategories; track opt.value) {
+                    <div (click)="selectCategory(opt.value, opt.label)"
+                      class="flex items-center gap-2.5 px-3 py-2.5 cursor-pointer hover:bg-amber-50 text-sm transition-colors">
+                      <span>{{ opt.icon }}</span>
+                      <span>{{ opt.label }}</span>
+                    </div>
+                  }
+                }
+                @if (form.type === 'expense' && filteredGoalOptions.length > 0) {
+                  <div class="px-3 pt-2 pb-1 text-xs font-semibold text-gray-400 uppercase tracking-wide border-t border-gray-100">Tus metas</div>
+                  @for (goal of filteredGoalOptions; track goal.id) {
+                    <div (click)="selectCategory(goal.name, goal.name)"
+                      class="flex items-center gap-2.5 px-3 py-2.5 cursor-pointer hover:bg-amber-50 text-sm transition-colors">
+                      <span>🎯</span>
+                      <span>{{ goal.name }}</span>
+                    </div>
+                  }
+                }
+                @if (filteredStandardCategories.length === 0 && filteredGoalOptions.length === 0) {
+                  <div class="px-3 py-3 text-sm text-gray-400 text-center">Sin resultados</div>
+                }
+              </div>
             }
-          </select>
+          </div>
         </div>
 
         <!-- Description -->

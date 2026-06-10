@@ -34,6 +34,8 @@ export class GoalsComponent implements OnInit {
   showForm = signal(false);
   editingId = signal<string | null>(null);
   form: GoalForm = { ...EMPTY_FORM };
+  targetAmountDisplay = '';
+  currentAmountDisplay = '';
   formLoading = signal(false);
   formError = signal<string | null>(null);
   deleteConfirmId = signal<string | null>(null);
@@ -49,6 +51,8 @@ export class GoalsComponent implements OnInit {
   openCreateForm(): void {
     this.editingId.set(null);
     this.form = { ...EMPTY_FORM, startDate: new Date().toISOString().split('T')[0] };
+    this.targetAmountDisplay = '';
+    this.currentAmountDisplay = '';
     this.formError.set(null);
     this.showForm.set(true);
   }
@@ -64,6 +68,8 @@ export class GoalsComponent implements OnInit {
       targetDate: goal.deadline,
       status: goal.status,
     };
+    this.targetAmountDisplay = goal.targetAmount ? goal.targetAmount.toLocaleString('es-CO') : '';
+    this.currentAmountDisplay = goal.currentAmount ? goal.currentAmount.toLocaleString('es-CO') : '';
     this.formError.set(null);
     this.showForm.set(true);
   }
@@ -123,6 +129,36 @@ export class GoalsComponent implements OnInit {
     const d = new Date(deadline);
     const today = new Date();
     return Math.max(0, Math.round((d.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)));
+  }
+
+  onTargetAmountInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const digits = input.value.replace(/\D/g, '');
+    if (!digits) {
+      this.targetAmountDisplay = '';
+      this.form.targetAmount = null;
+      input.value = '';
+    } else {
+      const numeric = parseInt(digits, 10);
+      this.targetAmountDisplay = numeric.toLocaleString('es-CO');
+      this.form.targetAmount = numeric;
+      input.value = this.targetAmountDisplay;
+    }
+  }
+
+  onCurrentAmountInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const digits = input.value.replace(/\D/g, '');
+    if (!digits) {
+      this.currentAmountDisplay = '';
+      this.form.currentAmount = null;
+      input.value = '';
+    } else {
+      const numeric = parseInt(digits, 10);
+      this.currentAmountDisplay = numeric.toLocaleString('es-CO');
+      this.form.currentAmount = numeric;
+      input.value = this.currentAmountDisplay;
+    }
   }
 
   formatCurrency(amount: number): string {

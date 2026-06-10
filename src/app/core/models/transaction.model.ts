@@ -44,7 +44,7 @@ export interface Transaction {
   type: TransactionType;
   amount: number;
   date: string;
-  category: TransactionCategory;
+  category: string;
   description?: string;
   createdAt: string;
 }
@@ -53,7 +53,7 @@ export interface TransactionForm {
   type: TransactionType;
   amount: number | null;
   date: string;
-  category: TransactionCategory | '';
+  category: string;
   description: string;
 }
 

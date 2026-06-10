@@ -25,16 +25,16 @@ interface FinancialRecordDto {
 }
 
 function toTransaction(dto: FinancialRecordDto): Transaction {
-  const categoryKey = (Object.entries(CATEGORY_LABELS).find(
+  const knownKey = Object.entries(CATEGORY_LABELS).find(
     ([, label]) => label.toLowerCase() === (dto.category ?? '').toLowerCase()
-  )?.[0] as TransactionCategory) ?? 'other';
+  )?.[0] as TransactionCategory | undefined;
 
   return {
     id: String(dto.financialRecordId),
     type: dto.recordType === 'INCOME' ? 'income' : 'expense',
     amount: dto.amount ?? 0,
     date: dto.recordDate ?? '',
-    category: categoryKey,
+    category: knownKey ?? (dto.category || 'other'),
     description: dto.description,
     createdAt: dto.recordDate ?? '',
   };
@@ -158,7 +158,11 @@ export class TransactionService {
     const map = new Map<string, { label: string; amount: number; type: string }>();
     this._transactions().forEach(t => {
       if (!map.has(t.category)) {
-        map.set(t.category, { label: CATEGORY_LABELS[t.category], amount: 0, type: t.type });
+        map.set(t.category, {
+          label: CATEGORY_LABELS[t.category as TransactionCategory] ?? t.category,
+          amount: 0,
+          type: t.type,
+        });
       }
       map.get(t.category)!.amount += t.amount;
     });
